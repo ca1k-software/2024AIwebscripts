@@ -1,0 +1,177 @@
+﻿<!DOCTYPE HTML>
+<head>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.9/angular.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.0-beta.5/angular-animate.min.js"></script>
+	<meta charset="utf-8">
+	<title></title>
+</head>
+<body ng-app="app" ng-controller="TestCtrl as test">
+	<div class="box" ng-show="test.mode">
+		<table>
+			<tr>
+				<td><img ng-src="{{test.imgs[test.ind]}}" /> </td>
+				<td>
+					<p><b style="color:{{test.color[test.ind]}}"><span>{{test.id[test.ind]}}</span></b></p>
+					<p>{{test.desc[test.ind]}}</p>
+					<br>
+					<button ng-click="test.go = !test.go" ng-show="test.go">Pause</button>
+					<button ng-click="test.go = !test.go" ng-show="!test.go">Resume</button>
+					<button ng-click="test.shift(1,test.ind)" ng-disabled="!test.ready">Previous</button>
+					<button ng-click="test.shift(0,test.ind)" ng-disabled="!test.ready">Next</button><b ng-show="test.go"> ▶️</b><b ng-show="!test.go"> ⏸</b>
+					<p><span ng-repeat="i in test.imgs" style="color:{{test.stat[$index]}};" class="stat">⬤</span></p>
+					<p>{{test.ind + 1}} of {{test.imgs.length}}</p>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div class="box" ng-show="!test.mode">
+		<table>
+			<tr>
+				<td><img ng-src="{{test.imgs[test.ind2]}}" /> </td>
+				<td>
+					<p><b style="color:{{test.color[test.ind2]}}"><span>{{test.id[test.ind2]}}</span></b></p>
+					<p>{{test.desc[test.ind2]}}</p>
+					<br>
+					<button ng-click="test.go = !test.go" ng-show="test.go">Pause</button>
+					<button ng-click="test.go = !test.go" ng-show="!test.go">Resume</button>
+					<button ng-click="test.shift(1,test.ind2)" ng-disabled="!test.ready2">Previous</button>
+					<button ng-click="test.shift(0,test.ind2)" ng-disabled="!test.ready2">Next</button><b ng-show="test.go"> ▶️</b><b ng-show="!test.go"> ⏸</b>
+					<p><span ng-repeat="i in test.imgs" style="color:{{test.stat2[$index]}};" class="stat">⬤</span></p>
+					<p>{{test.ind2 + 1}} of {{test.imgs.length}}</p>
+				</td>
+			</tr>
+		</table>
+	</div>
+	</div>
+</body>
+<style>
+	:root {
+		--t: 1s;
+		/* transition time */
+		--dim: 40vw;
+		/* image dimensions */
+	}
+	.box {
+		background: linear-gradient(to bottom, #000000, #666666);
+		color: white;
+		-webkit-transition: all linear var(--t);
+		transition: all linear var(--t);
+		position: absolute;
+		/* important to the fading effect. */
+	}
+	.box.ng-hide {
+		opacity: 0;
+	}
+	img {
+		width: var(--dim);
+		height: var(--dim);
+	}
+	p {
+		font-family: arial;
+		font-size: 2vw;
+		text-align: center;
+	}
+	span {
+		font-size: 3vw;
+		font-family: georgia;
+	}
+	b {
+		padding: 1vw;
+	}
+	td {
+		text-align: center;
+	}
+	.stat {
+		-webkit-text-stroke: 0.125vw white;
+		font-size: 1vw;
+		padding: 0.5vw;
+	}
+</style>
+<script type="text/javascript">
+	t = 5; //in seconds
+	angular.module('app', ['ngAnimate']).controller('TestCtrl', TestCtrl)
+	function TestCtrl($timeout) {
+		var self = this; //if the controller is named "test", self refers to that object name
+		self.mode = true; //influences which slide is dominant/active, is directly linked to the fading transition, and indicates which slide is active
+		self.go = true; //influences slideshow status and the respective resume/pause indicator
+		self.ready = true; //cooldown boolean for next/previous buttons
+		self.ready2 = false;
+		self.imgs = ["https://i.imgur.com/xkAf5L5.png", "https://i.imgur.com/SXYMKE2.png", "https://i.imgur.com/CWs5KBf.png", "https://i.imgur.com/GZFNc7N.png", "https://i.imgur.com/nU2AQ4L.png", "https://i.imgur.com/OBc3oOT.png"];
+		self.imgs.forEach(function(imageURL) {
+			var img = new Image();
+			img.src = imageURL;
+		});
+		self.id = ["Apples", "Oranges", "Lemons", "Limes", "Blueberries", "Grapes"];
+		self.desc = ["Sink your teeth into the crisp and delightful sweetness of our apples! Each bite transports you to an orchard bursting with flavor!", "Prepare for a burst of sunshine with every slice of our tantalizing oranges! Fresh, vibrant, and bursting with natural citrus sweetness, our oranges are the epitome of zestful indulgence!", "Step into a world of citrusy enchantment as you embark on a journey with our vibrant lemons! From their vibrant yellow appearance to their tangy and refreshing taste, our lemons are nature's secret weapon of zesty delight!", "Let our zesty limes transport your taste buds to a tropical paradise, bustling with tangy sensations! Packed with invigorating flavor, our limes bring a tangy twist and vibrant green color to the table!", "Embark on a blissful journey as you savor the plump and succulent sweetness of our blueberries! Bursting with antioxidants, these little gems of nature bring a delicious abundance of health benefits to your plate!", "Indulge in the timeless elegance and the pure succulence of our grapes! Each plump grape carries with it a myriad of flavors - from the delicate sweetness of the green grapes to the bold and lusciousness of the red varieties!"];
+		self.color = ["red", "orange", "yellow", "lime", "blue", "violet"]; //css color styling array for the slideshow item IDs/labels
+		//slideshow status dots
+		self.stat = [self.color[0]]; //initializing first stat array with the first value set because the statshift method for whatever reason cannot be called outside of a function
+		self.stat2 = [];
+		//initializing the stat arrays
+		for (let i = 1; i < self.imgs.length; i++) {
+			self.stat[i] = "black";
+		}
+		for (let i = 0; i < self.imgs.length; i++) {
+			self.stat2[i] = "black";
+		}
+		//initializing the index variables
+		self.ind = 0;
+		self.ind2 = 1;
+		//recursive animation function
+		function anim() {
+			$timeout(function() {
+				if (self.go) { //boolean condition for the slideshow's movement 
+					trans(1);
+					//check if index is approaching image array bounds
+					if (self.ind == self.imgs.length) { //check if the primary image index (ind) is approaching the end of the image array
+						self.ind = 0; //reset and begin the cycle again. ind and ind2 are dependent on each other
+						statshift(self.stat, self.ind);
+					}
+				}
+				anim(); //call to parent function recursively
+			}, t * 1000); //timed function, modulated by t
+		}
+		anim(); //start the animation
+		//shift function is needed because the ng-click attribute will not accept if/then comparisons
+		self.shift = function(mode, index) { //index intended to either be self.ind or self.ind2
+			//out-of-bounds bug prevention logic. mode: arg 0 is forward, arg 1 is backward
+			if (mode == 0 && index < self.imgs.length - 1) {
+				trans(1);
+			}
+			if (mode == 0 && index == self.imgs.length - 1) {
+				trans(-1 * (self.imgs.length - 1));
+			}
+			if (mode == 1 && index > 0) {
+				trans(-1);
+			}
+			if (mode == 1 && index == 0) {
+				trans((self.imgs.length) - 1);
+			}
+			self.go = false; //pause the slideshow since you want to examine a particular slide
+		}
+		function trans(amt) { //fading transition code
+			self.mode = !self.mode; //flip flop active images, activate the animation
+			//the image that is inactive will switch it's index to the image after the visible image
+			if (self.mode) {
+				self.ind = self.ind2 + amt;
+				statshift(self.stat, self.ind); //increase the index of the inactive slide 
+				self.ready2 = !self.ready2;
+				$timeout(function() {
+					self.ready = !self.ready;
+				}, 1000);
+			} else {
+				self.ind2 = self.ind + amt;
+				statshift(self.stat2, self.ind2);
+				self.ready = !self.ready;
+				$timeout(function() {
+					self.ready2 = !self.ready2;
+				}, 1000);
+			}
+		}
+		function statshift(arr, val) {
+			arr.fill("black"); //turn the whole dot array black
+			arr[val] = self.color[val]; //now you mark the dot corresponding to your index
+		}
+	}
+</script>
+</html>
