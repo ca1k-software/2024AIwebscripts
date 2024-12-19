@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.9/angular.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body ng-app="myApp" ng-controller="myCtrl">
+    <div class="container">
+        <div class="header" style="background-color: #aaaaaa; color: white;">Statistical Calculator</div>
+        <div class="input">
+            Enter numbers (comma-separated):
+            <input type="text" ng-model="data" ng-change="updateGraph(true)"/>
+            <button ng-click="toggleSorting()">Toggle Sorting</button>
+            <button ng-click="toggleFlip()">Flip Chart</button>
+        </div>
+		<div class="output" style="background-color: #aaaaaa; color: white;">Dataset index modifier: index {{ sliderValue }} of {{ values3.length - 1 }} (Value: {{ values3[sliderValue] }})</div>
+		<b>Index Slider: <input type="range" min="0" max="{{ values3.length - 1 }}" ng-model="sliderValue"/></b>
+		<button ng-click="mod(sliderValue,data2,0)">+</button>
+		<button ng-click="mod(sliderValue,-data2,0)">-</button>
+		<button ng-click="mod(sliderValue,data2,1)">*</button>
+		<button ng-click="mod(sliderValue,data2,2)">/</button>
+		<input type="number" ng-model="data2" style="width: 10vw;"/>
+		<button ng-click="updateGraph(true)">Reset Dataset</button><br>
+		<div class="output" style="background-color: #aaaaaa; color: white;">Search index by value:</div>
+		<b>Number <input type="number" ng-model="data3" ng-change="returnIndexes()" style="width: 10vw;"/> is at indexes: [{{ indexes }}]</b>
+		<div class="output" style="background-color: #aaaaaa; color: white;">Analysis:</div>
+        <div class="output">Mean: [{{ mean }}], Median: [{{ median }}], Mode: [{{ mode }}], 
+        Standard Deviation: [{{ standardDeviation }}], Minimum: [{{ min }}], Maximum: [{{ max }}], 
+        Total: [{{ total }}], Range: [{{ range }}], Quartiles: [{{ quartiles }}], Variance: [{{ variance }}]</div>
+        <div id="graph"></div>
+    </div>
+</body>
+<style>
+    html,
+    body {
+        margin: 0;
+        font-family: courier;
+        text-align: center;
+        font-size: 2.5vh;
+        background-color: white;
+    }
+    .container {
+        display: block;
+        justify-content: center;
+        align-items: center;
+    }
+    .input,
+    .output,
+    .header {
+        font-weight: bold;
+        padding: 2.5px;
+        border-width: 1px;
+        border-style: solid;
+        border-color: black;
+    }
+    #graph {
+        width: 100%;
+        height: 60vh;
+    }
+</style>
+<script>
+    var app = angular.module("myApp", []);
+    app.controller("myCtrl", function ($scope) {
+        function updateV3() {
+			if ($scope.sortByValue) {
+				$scope.values3 = Array.from($scope.values2).sort(function (a, b) {
+					return a - b;
+				});
+			} else {
+				$scope.values3 = $scope.values2;
+			}
+        }
+        $scope.returnIndexes = function () {
+			const vals = [];
+			for(let i = 0; i < $scope.values3.length; i++) {
+				if($scope.values3[i] == $scope.data3) {
+					vals.push(i);
+				}
+			}
+			$scope.indexes = vals.join(", ");
+		}
+        $scope.mod = function (index, n, mode) {
+            if ($scope.sortByValue) {
+        		if (mode == 0){
+        			$scope.values2[$scope.values2.indexOf($scope.values3[index])] = $scope.values2[$scope.values2.indexOf($scope.values3[index])] + n;
+        			$scope.values3[index] = $scope.values3[index] + n;
+        		}
+        		if (mode == 1){
+        			$scope.values2[$scope.values2.indexOf($scope.values3[index])] = $scope.values2[$scope.values2.indexOf($scope.values3[index])] * n;
+        			$scope.values3[index] = $scope.values3[index] * n;
+        		}
+        		if (mode == 2){
+        			$scope.values2[$scope.values2.indexOf($scope.values3[index])] = $scope.values2[$scope.values2.indexOf($scope.values3[index])] / n;
+        			$scope.values3[index] = $scope.values3[index] / n;
+        		}
+            } else {
+        		if (mode == 0){
+        			$scope.values2[index] = $scope.values2[index] + n;
+        		}
+        		if (mode == 1){
+        			$scope.values2[index] = $scope.values2[index] * n;
+        		}
+        		if (mode == 2){
+        			$scope.values2[index] = $scope.values2[index] / n;
+        		}
+            }
+            $scope.updateGraph(false);
+        }
+        function calculateMean(numbers) {
+            return (
+                numbers.reduce(function (sum, val) {
+                    return sum + val;
+                }, 0) / numbers.length
+            ).toFixed($scope.d);
+        }
+        function calculateMedian(numbers) {
+            var len = numbers.length;
+            return (numbers[Math.floor(len / 2)] + numbers[Math.ceil(len / 2)]) / 2;
+        }
+        function calculateMode(numbers) {
+            var freqMap = {};
+            var maxFreq = 0;
+            var mode = [];
+            numbers.forEach(function (num) {
+                if (!freqMap[num]) freqMap[num] = 0;
+                freqMap[num]++;
+                if (freqMap[num] > maxFreq) {
+                    maxFreq = freqMap[num];
+                    mode = [num];
+                } else if (freqMap[num] === maxFreq) {
+                    mode.push(num);
+                }
+            });
+            return mode.join(", ");
+        }
+        function calculateStandardDeviation(numbers) {
+            var deviationArr = numbers.map(function (num) {
+                return Math.pow(num - calculateMean(numbers), 2);
+            });
+            return Math.sqrt(calculateMean(deviationArr)).toFixed($scope.d);
+        }
+        function calculateVariance(numbers) {
+        	return (numbers.reduce((total, num) => total + Math.pow(num - calculateMean(numbers), 2), 0) / numbers.length).toFixed($scope.d);
+        }
+        function calculateTotal(numbers) {
+            let total = 0;
+            for (let i = 0; i < numbers.length; i++) {
+                total += numbers[i];
+            }
+            return total.toFixed($scope.d);
+        }
+        function calculateQuartiles(numbers) {
+            let print = [];
+            // Finding the first quartile (Q1)
+            print.push(numbers[Math.floor(numbers.length / 4)]);
+            // Finding the second quartile (Q2) or median
+            print.push(calculateMedian(numbers));
+            // Finding the third quartile (Q3)
+            print.push(numbers[Math.floor((numbers.length * 3) / 4)]);
+            return print.join(", ");
+        }
+        $scope.toggleSorting = function () {
+            $scope.sortByValue = !$scope.sortByValue;
+            updateV3();
+			$scope.updateGraph(false);
+        };
+        $scope.toggleFlip = function () {
+			$scope.values3.reverse();
+			$scope.updateGraph(false);
+        }
+        $scope.updateGraph = function (mode) {
+        	$scope.values = $scope.data.split(",").map(Number);
+            if (mode) {
+            	$scope.values2 = $scope.values;
+            	updateV3();
+            }
+            $scope.mean = calculateMean($scope.values3);
+            $scope.median = calculateMedian($scope.values3);
+            $scope.mode = calculateMode($scope.values3);
+            $scope.standardDeviation = calculateStandardDeviation($scope.values3);
+            $scope.min = Math.min(...$scope.values3);
+            $scope.max = Math.max(...$scope.values3);
+            $scope.total = calculateTotal($scope.values3);
+            $scope.range = $scope.max - $scope.min;
+            $scope.quartiles = calculateQuartiles($scope.values3);
+            $scope.variance = calculateVariance($scope.values3);
+            var trace = {
+                y: $scope.values3,
+                type: "bar",
+                mode: "markers",
+                marker: {
+                    color: "#aaaaaa"
+                }
+            };
+            var layout = {
+                title: "Statistical Calculator",
+            };
+            Plotly.newPlot("graph", [trace], layout);
+        };
+        window.addEventListener("resize", function () {
+            Plotly.Plots.resize("graph");
+        });
+    });
+</script>
+</html>
